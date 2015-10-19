@@ -1,0 +1,342 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% University/School Laboratory Report
+% LaTeX Template
+% Version 3.0 (4/2/13)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% Linux and Unix Users Group at Virginia Tech Wiki 
+% (https://vtluug.org/wiki/Example_LaTeX_chem_lab_report)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage{mhchem} % Package for chemical equation typesetting
+\usepackage{siunitx} % Provides the \SI{}{} command for typesetting SI units
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{commath}
+\usepackage{epsfig}
+\usepackage{verbatim}
+\usepackage{graphicx} % Required for the inclusion of images
+\usepackage[margin=1in]{geometry}
+\usepackage{multirow}
+\usepackage{color}
+\usepackage{array}
+\usepackage{epstopdf}
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+
+\renewcommand{\labelenumi}{\alph{enumi}.} % Make numbering in the enumerate environment by letter rather than number (e.g. section 6)
+
+%\usepackage{times} % Uncomment to use the Times New Roman font
+
+%----------------------------------------------------------------------------------------
+%	DOCUMENT INFORMATION
+%----------------------------------------------------------------------------------------
+
+\title{MapReduce on Hadoop} % Title
+
+\author{Jiahui \textsc{Guo}} % Author name
+
+\date{\today} % Date for the report
+
+\begin{document}
+
+\maketitle % Insert the title, author and date
+
+
+% If you wish to include an abstract, uncomment the lines below
+% \begin{abstract}
+% Abstract text
+% \end{abstract}
+
+%----------------------------------------------------------------------------------------
+%	SECTION 1
+%----------------------------------------------------------------------------------------
+
+\section{Deploying Hadoop System on Hydra}
+\subsection{Configure core site}
+\begin{verbatim}
+<configuration>
+<property>
+<name>hadoop.tmp.dir</name> 
+<value>/local_scratch/jguo7/hadoop</value>
+</property>
+<property>
+<name>fs.default.name</name> 
+<value>hdfs://hydra22.eecs.utk.edu:55655</value>
+</property>
+</configuration>
+\end{verbatim}
+
+\subsection{Configure HDFS site}
+\begin{verbatim}
+<configuration>
+<property> 
+<name>dfs.replication</name> 
+<value>3</value>
+</property>
+<property>
+<name>dfs.name.dir</name>
+<value>/local_scratch/jguo7/hadoop/</value>
+</property>
+<property>
+<name>dfs.data.dir</name>
+<value>/local_scratch/jguo7/hadoop/</value>
+</property>
+</configuration>
+\end{verbatim}
+
+\subsection{Configure the MapReduce site}
+\begin{verbatim}
+<configuration>
+<property> 
+<name>mapred.job.tracker</name>
+<value>hydra22.eecs.utk.edu:55656</value>
+</property>
+</configuration>
+\end{verbatim}
+
+\subsection{Configure Master and Slaves}
+\begin{itemize}
+\item Master
+    \begin{itemize}
+    \item hydra22.eecs.utk.edu
+    \end{itemize}
+\item Slaves
+    \begin{itemize}
+        \item hydra23.eecs.utk.edu
+        \item hydra24.eecs.utk.edu
+        \item hydra26.eecs.utk.edu
+    \end{itemize}
+\end{itemize}
+ 
+%----------------------------------------------------------------------------------------
+%	SECTION 2
+%----------------------------------------------------------------------------------------
+\section{Building the Reverse-indexer}
+\subsection{Identifying and Removing Stop Words}
+\subsubsection{Pre-process Input File}
+For the complete works of Shakespeare, the pre-processing step adds line numbers at the beginning 
+of each line using the following command:\\
+\verb+nl -nln pg100.txt > pg100_num.txt+\\
+Then the pg100\_num.txt is used as the input file.
+
+\subsubsection{Word-patterns to be Ignored}
+The following word-patterns are added to "patterns.txt" file to be skipped.
+\begin{verbatim}
+\:
+\, 
+\.
+\'
+\;
+\?
+\!
+\"
+\-
+\%
+\^
+\&
+\*
+\(
+\)
+\[
+\]
+\{
+\}
+\\
+\/
+\<
+\>
+\@
+\#
+\$
+\^
+\|
+\'s
+\end{verbatim}
+
+\subsubsection{Stoping words}
+After getting the result from the word counting, the words and its appearance time are listed 
+in file ``sorted", The following shows a snippet of this file which helps to identify the threshold
+for removing stoping words.
+\begin{verbatim}
+the 27578
+and 26679
+i   20682
+to  19159
+of  18120
+a   14593
+you 13615
+my  12481
+that    11506
+in  10988
+is  9568
+not 8714
+for 8217
+with    7990
+me  7769
+it  7710
+be  7075
+your    6872
+his 6857
+this    6821
+he  6552
+but 6265
+as  5951
+have    5881
+thou    5486
+so  5254
+him 5192
+will    4975
+what    4802
+by  4380
+thy 4032
+all 3920
+her 3843
+are 3837
+no  3790
+do  3749
+shall   3588
+if  3493
+we  3296
+thee    3178
+lord    3091
+or  3076
+on  3070
+our 3061
+king    3029
+good    2812
+now 2781
+sir 2753
+from    2642
+o   2616
+come    2507
+at  2504
+they    2471
+well    2462
+let 2356
+she 2355
+here    2323
+which   2315
+would   2293
+more    2288
+was 2229
+then    2221
+there   2200
+am  2168
+how 2161
+love    2141
+enter   2098
+their   2075
+when    2050
+man 1993
+them    1978
+ill 1972
+hath    1941
+than    1880
+may 1851
+an  1833
+one 1793
+upon    1735
+go  1733
+like    1701
+say 1680
+know    1647
+make    1631
+did 1626
+us  1619
+such    1607
+were    1577
+should  1571
+yet 1569
+must    1491
+why 1465
+see 1439
+had 1427
+tis 1405
+out 1376
+where   1336
+some    1332
+give    1329
+these   1322
+time    1295
+who 1287
+too 1232
+can 1208
+------------------------
+take    1197
+most    1181
+mine    1166
+speak   1164
+first   1160
+
+\end{verbatim}
+The dashed line indicates the threshold for the stoping word, the reason is most of the words above the threshold
+appears at a relative high frequnecy and are modal verbs or pronoun, or even simple regular verb, which can not 
+contain enough information and most important, such words could apprear in any documents with a high frequnecy. Thus
+they are treated as ``noise" in this assignment. One thing needs to be noticed is that in this assignment the stemming
+step is not performed, which means the program will treat ``book" and ``books" as different words.
+
+\subsection{Building the Inverted Index}
+\subsubsection{Removing stop words}
+In the implementaion, the stop words are not physically removed, instead they are ``removed" in the processing of
+building the key in the map stage using Java Regex. This is realized by adding the stop list into the ``patterns.txt"
+file, padding with ``\textbackslash{}b" in order to match the exact word. For example, to remove the word ``book, they, we", the
+following are added to ``patterns.txt'' file.
+\begin{verbatim}
+\bbook\b
+\bwe\b
+\bthey\b
+\end{verbatim}
+
+\subsubsection{Input file}
+In order to demostrate the capability of multiple files, the input file ``pg100\_num.txt" is duplicated as 
+\begin{verbatim}
+pg1001
+pg1002
+pg1003
+pg1004
+\end{verbatim}
+And these four files are used as input for building inverted index. 
+
+\subsection{Query the Inverted Index}
+The query built here is a local query, which could search the localtion of a specific word, if exists, the query will
+return the filename and line offset; if not exists, the query will show ``the word does not exist!" 
+
+\section{Demo}
+Using the 4 input files, a snippet of the inversed index built is shown below:
+\begin{verbatim}
+zir->(pg1001, 62604)(pg1001, 62595)(pg1002, 62604)(pg1002, 62595)(pg1004, 62604)
+(pg1004, 62595)(pg1003, 62604)(pg1003,62595)
+zo->(pg1003, 62598)(pg1002, 62598)(pg1001, 62598)(pg1004, 62598)
+zodiac->(pg1004, 108464)(pg1002, 108464)(pg1003, 108464)(pg1001, 108464)
+zodiacs->(pg1001, 69627)(pg1002, 69627)(pg1004, 69627)(pg1003, 69627)
+zone->(pg1003, 27750)(pg1002, 27750)(pg1001, 27750)(pg1004, 27750)
+\end{verbatim}
+
+The following shows how the query works and validate the accuracy of the query result.
+\begin{verbatim}
+$java Query -f part-00000 -w zone
+localtion for word 'zone': 
+(pg1003, 27750)(pg1002, 27750)(pg1001, 27750)(pg1004, 27750)
+
+$java Query -f part-00000 -w zoa
+The word zoa does not exist!
+\end{verbatim}
+
+%----------------------------------------------------------------------------------------
+
+
+\end{document}
